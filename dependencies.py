@@ -33,3 +33,15 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     if not current_user.is_activated:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+def require_role(required_role: list):
+    async def role_checker(current_user: User = Depends(get_current_active_user)):
+        """Check if the current user has the required role"""
+        if current_user.role not in required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action"
+            )
+        return current_user
+    return Depends(role_checker)

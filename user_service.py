@@ -18,6 +18,7 @@ class UserService:
             last_name=user.last_name,
             email=user.email,
             hashed_password=hashed_password,
+            role=user.role or "customer"
         )
         db.add(db_user)
         await db.commit()

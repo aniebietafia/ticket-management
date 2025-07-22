@@ -1,5 +1,7 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime
+import enum
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Enum
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -18,6 +20,12 @@ AsyncSessionLocal: sessionmaker[AsyncSession] = sessionmaker(
     expire_on_commit=False,
 )
 Base = declarative_base()
+
+class TicketStatus(enum.Enum):
+    OPEN = "Open"
+    IN_PROGRESS = "In Progress"
+    RESOLVED = "Resolved"
+    CLOSED = "Closed"
 
 class BaseModel(Base):
     __abstract__ = True
@@ -43,9 +51,21 @@ class User(BaseModel):
     hashed_password = Column(String(128), nullable=False)
     is_activated = Column(Boolean, default=True)
     last_login = Column(DateTime(timezone=True), nullable=True, default=None)
+    role = Column(String(20), nullable=False, default="customer")
 
     def __repr__(self):
         return f"<User id={self.id} email={self.email} is_active={self.is_activated}>"
+
+class Ticket(BaseModel):
+    __tablename__ = "tickets"
+
+    title = Column(String(100), nullable=False)
+    description = Column(String, nullable=False)
+    status = Column(Enum(TicketStatus), default=TicketStatus.OPEN, nullable=False)
+    customer_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    agent_id = Column(String(36), ForeignKey("users.id"), nullable=True)
+    resolution_notes = Column(String, nullable=True)
+    embed_token = Column(String, unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
 
 
 async def get_db():
