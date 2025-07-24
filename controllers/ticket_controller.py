@@ -55,12 +55,6 @@ async def get_ticket(
     current_user: User = require_role(["agent", "admin"]),
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.role not in ["agent", "admin"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to access this ticket"
-        )
-
     """Get ticket by ID"""
     db_ticket = await ticket_service.get_ticket(db, ticket_id)
     if not db_ticket:

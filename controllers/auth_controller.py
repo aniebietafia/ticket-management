@@ -72,8 +72,11 @@ async def login_for_access_token(payload: UserLogin, db: AsyncSession = Depends(
         "email": user.email,
         "is_activated": user.is_activated,
         "last_login": user.last_login,
+        "role": user.role,
         "token_type": "bearer",
-        "access_token": access_token
+        "access_token": access_token,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at
     }
 
     return {
