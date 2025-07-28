@@ -2,7 +2,7 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 from ticket_service import TicketService
-from schemas import TicketCreate, TicketUpdate
+from app.schemas.ticket import TicketCreate, TicketUpdate
 
 @pytest.mark.asyncio
 async def test_create_ticket():

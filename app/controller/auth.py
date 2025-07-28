@@ -3,10 +3,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 
-from database import get_db
-from schemas import UserCreate, UserResponse, UserToken, UserLogin
-from auth import auth_service
-from user_service import user_service
+from app.models.ticket import get_db
+from app.schemas.ticket import UserCreate, UserResponse, UserToken, UserLogin
+from app.security.auth import auth_service
+from app.api.user import user_service
 from config import settings
 from datetime import datetime
 

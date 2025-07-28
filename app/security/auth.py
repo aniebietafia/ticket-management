@@ -4,8 +4,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from database import User
-from schemas import UserTokenData
+from app.models.ticket import User
+from app.schemas.ticket import UserTokenData
 from config import settings
 
 

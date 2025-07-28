@@ -1,7 +1,7 @@
-from database import User, Ticket
+from app.models.ticket import User, Ticket
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-from schemas import TicketCreate, TicketUpdate
+from app.schemas.ticket import TicketCreate, TicketUpdate
 from typing import List, Optional
 
 class TicketService:
@@ -22,13 +22,12 @@ class TicketService:
         return result.scalars().all()
 
     async def get_tickets(self, db: AsyncSession, status: Optional[str] = None, agent_id: Optional[str] = None) -> List[Ticket]:
-        """Get tickets with optional filters"""
+        """Get all tickets filtered by status or assigned agent"""
         query = select(Ticket)
         if status:
             query = query.filter(Ticket.status == status)
         if agent_id:
             query = query.filter(Ticket.agent_id == agent_id)
-        
         result = await db.execute(query)
         return result.scalars().all()
 
@@ -37,7 +36,11 @@ class TicketService:
         result = await db.execute(select(Ticket).filter(Ticket.id == ticket_id))
         return result.scalar_one_or_none()
 
-    async def update_ticket(self, db: AsyncSession, ticket_id: str, ticket_update: TicketUpdate) -> Optional[Ticket]:
+    async def update_ticket(
+        self,
+        db: AsyncSession,
+        ticket_id: str,
+        ticket_update: TicketUpdate) -> Optional[Ticket]:
         """Update ticket information"""
         db_ticket = await self.get_ticket(db, ticket_id)
         if not db_ticket:

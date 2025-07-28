@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from database import engine, Base
-from controllers.auth_controller import router as auth_router
-from controllers.user_controller import router as user_router
-from controllers.public_controller import router as public_router
-from controllers.ticket_controller import router as ticket_router
+from app.models.ticket import engine, Base
+from app.controller.auth import router as auth_router
+from app.controller.user import router as user_router
+from app.controller.public import router as public_router
+from app.controller.tickets import router as ticket_router
 
 
 @asynccontextmanager

@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from database import User
-from schemas import UserCreate, UserUpdate
-from auth import auth_service
+from app.models.ticket import User
+from app.schemas.ticket import UserCreate, UserUpdate
+from app.security.auth import auth_service
 from typing import Optional, List
 
 

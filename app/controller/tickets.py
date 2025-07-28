@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
-from database import get_db, User
-from schemas import TicketCreate, TicketUpdate, TicketResponse, TicketAssign
-from ticket_service import ticket_service
-from dependencies import get_current_active_user, require_role
+from app.models.ticket import get_db, User
+from app.schemas.ticket import TicketCreate, TicketUpdate, TicketResponse, TicketAssign
+from app.api.ticket import ticket_service
+from app.config.dependencies import get_current_active_user, require_role
 
 router = APIRouter(prefix="/tickets", tags=["Tickets"])
 
@@ -48,25 +48,52 @@ async def get_my_tickets(
         "tickets": [ticket.model_dump() for ticket in tickets]
     }
 
-@router.get("/", response_model=TicketResponse)
-async def get_ticket(
+@router.get("/", response_model=List[TicketResponse])
+async def get_tickets(
     ticket_id: str,
-    status: Optional[str] = Query(None, description="Filter tickets by status"),
+    status: Optional[str] = Query(None, description="Filter tickets by status or assigned agent"),
     current_user: User = require_role(["agent", "admin"]),
     db: AsyncSession = Depends(get_db)
+) -> List[TicketResponse]:
+    """Get all tickets filtered by status or assigned agent"""
+    if not ticket_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ticket ID is required"
+        )
+    
+    tickets = await ticket_service.get_tickets(db, status=status, agent_id=current_user.id)
+    if not tickets:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No tickets found"
+        )
+    
+    return {
+        "status": "success",
+        "status_code": status.HTTP_200_OK,
+        "message": "Tickets retrieved successfully",
+        "tickets": [ticket.model_dump() for ticket in tickets]
+    }
+
+@router.get("/{id}", response_model=TicketResponse)
+async def get_ticket(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = require_role(["agent", "admin", "customer"]),
+    id: str = Path(..., description="Ticket ID to view")
 ):
-    """Get ticket by ID"""
-    db_ticket = await ticket_service.get_ticket(db, ticket_id)
+    """View specific ticket with access control"""
+    db_ticket = await ticket_service.get_ticket(db, id)
     if not db_ticket:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Ticket not found"
         )
     
-    if status and db_ticket.status != status:
+    if db_ticket.customer_id != current_user.id and db_ticket.agent_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ticket status does not match the provided filter"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this ticket"
         )
     
     return {
@@ -74,24 +101,6 @@ async def get_ticket(
         "status_code": status.HTTP_200_OK,
         "message": "Ticket retrieved successfully",
         "ticket": db_ticket.model_dump()
-    }
-
-@router.get("/{id}", response_model=List[TicketResponse])
-async def get_tickets(
-    db: AsyncSession = Depends(get_db)
-):
-    """Get all tickets with optional filters"""
-    tickets = await ticket_service.get_tickets(db)
-    if not tickets:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No tickets found"
-        )
-    return {
-        "status": "success",
-        "status_code": status.HTTP_200_OK,
-        "message": "Tickets retrieved successfully",
-        "tickets": [ticket.model_dump() for ticket in tickets]
     }
 
 @router.patch("/{id}", response_model=TicketResponse)
@@ -142,7 +151,7 @@ async def assign_ticket(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Ticket not found"
         )
-    
+
     return {
         "status": "success",
         "status_code": status.HTTP_200_OK,
