@@ -44,4 +44,4 @@ def require_role(required_role: list):
                 detail="You do not have permission to perform this action"
             )
         return current_user
-    return Depends(role_checker)
+    return role_checker

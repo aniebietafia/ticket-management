@@ -10,6 +10,7 @@ from app.controller.tickets import router as ticket_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # init_async_db()
     # Create database tables on startup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

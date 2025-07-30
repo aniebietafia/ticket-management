@@ -8,10 +8,14 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 from config import settings
+# import os
 
 database_url = settings.database_url
+
+# if database_url.startswith("postgresql://") and os.environ.get("ALEMBIC_RUNNING"):
+#     database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
 if database_url.startswith("postgresql://"):
-    database_url = database_url.replace("postgresql//", "postgresql+asyncpg://")
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
 
 engine = create_async_engine(database_url, echo=True)
 AsyncSessionLocal: sessionmaker[AsyncSession] = sessionmaker(
@@ -20,6 +24,18 @@ AsyncSessionLocal: sessionmaker[AsyncSession] = sessionmaker(
     expire_on_commit=False,
 )
 Base = declarative_base()
+
+# engine = None
+# AsyncSessionLocal = None
+
+# def init_async_db():
+#     global engine, AsyncSessionLocal
+#     engine = create_async_engine(database_url, echo=True)
+#     AsyncSessionLocal = sessionmaker(
+#         bind=engine,
+#         class_=AsyncSession,
+#         expire_on_commit=False,
+#     )
 
 class TicketStatus(enum.Enum):
     OPEN = "Open"
@@ -36,11 +52,6 @@ class BaseModel(Base):
 
     def __repr__(self):
         return f"<{self.__class__.__name__} id={self.id}>"
-
-
-# Ensure the database URL is correctly formatted for asyncpg
-if not database_url.startswith("postgresql+asyncpg://"):
-    raise ValueError("Database URL must start with 'postgresql+asyncpg://' for asyncpg support.")
 
 class User(BaseModel):
     __tablename__ = "users"
@@ -63,10 +74,9 @@ class Ticket(BaseModel):
     description = Column(String, nullable=False)
     status = Column(Enum(TicketStatus), default=TicketStatus.OPEN, nullable=False)
     customer_id = Column(String(36), ForeignKey("users.id"), nullable=False)
-    agent_id = Column(String(36), ForeignKey("users.id"), nullable=True)
+    agent_id = Column(String(36), ForeignKey("users.id"), nullable=True, default=None)
     resolution_notes = Column(String, nullable=True)
     embed_token = Column(String, unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
-
 
 async def get_db():
     async with AsyncSessionLocal() as session:

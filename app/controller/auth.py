@@ -61,7 +61,7 @@ async def login_for_access_token(payload: UserLogin, db: AsyncSession = Depends(
 
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = auth_service.create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"email": user.email, "id": user.id}, expires_delta=access_token_expires
     )
 
     # Prepare user data to return
